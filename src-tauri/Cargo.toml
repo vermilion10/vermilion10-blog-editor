@@ -1,0 +1,27 @@
+[package]
+name = "vermilion10-blog-editor"
+version = "0.1.0"
+description = "Desktop and mobile editor for the vermilion10 blog"
+authors = ["vermilion10"]
+license = ""
+repository = "https://github.com/vermilion10/vermilion10-blog-editor"
+edition = "2024"
+rust-version = "1.90"
+
+[lib]
+name = "blog_editor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.0", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.0", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }

@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/*
+ * Material Design 3 tokens. Color roles (--md-sys-color-*) are generated at
+ * runtime from the seed color in src/lib/theme.ts; everything else is static.
+ */
+:root {
+  /* Shape scale */
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+
+  /* Motion */
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-duration-short: 150ms;
+  --md-sys-motion-duration-medium: 300ms;
+
+  /* State layer opacities */
+  --md-sys-state-hover: 0.08;
+  --md-sys-state-focus: 0.1;
+  --md-sys-state-pressed: 0.1;
+
+  /* Blog preview stays dark in both themes: it has to match the live site. */
+  --blog-bg: #0d0d12;
+}
+
+/* Syntax colors for the code editor, per theme. */
+:root[data-theme='dark'] {
+  --cm-heading: #ffffff;
+  --cm-emphasis: #e8e8e8;
+  --cm-link: #7dd3fc;
+  --cm-code: #fdba74;
+  --cm-quote: #a5b4c3;
+  --cm-mark: var(--md-sys-color-primary);
+  --cm-keyword: #f47067;
+  --cm-string: #96d0ff;
+  --cm-number: #6cb6ff;
+  --cm-comment: #8b949e;
+  --cm-function: #dcbdfb;
+  --cm-type: #f69d50;
+  --cm-property: #8ddb8c;
+}
+
+:root[data-theme='light'] {
+  --cm-heading: #1b1b1f;
+  --cm-emphasis: #2b2b30;
+  --cm-link: #0550ae;
+  --cm-code: #953800;
+  --cm-quote: #57606a;
+  --cm-mark: var(--md-sys-color-primary);
+  --cm-keyword: #cf222e;
+  --cm-string: #0a3069;
+  --cm-number: #0550ae;
+  --cm-comment: #6e7781;
+  --cm-function: #8250df;
+  --cm-type: #953800;
+  --cm-property: #116329;
+}
+
+@theme inline {
+  --font-sans: 'Roboto Flex Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-primary: var(--md-sys-color-primary);
+  --color-on-primary: var(--md-sys-color-on-primary);
+  --color-primary-container: var(--md-sys-color-primary-container);
+  --color-on-primary-container: var(--md-sys-color-on-primary-container);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-on-secondary: var(--md-sys-color-on-secondary);
+  --color-secondary-container: var(--md-sys-color-secondary-container);
+  --color-on-secondary-container: var(--md-sys-color-on-secondary-container);
+  --color-tertiary: var(--md-sys-color-tertiary);
+  --color-tertiary-container: var(--md-sys-color-tertiary-container);
+  --color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+  --color-error: var(--md-sys-color-error);
+  --color-on-error: var(--md-sys-color-on-error);
+  --color-error-container: var(--md-sys-color-error-container);
+  --color-on-error-container: var(--md-sys-color-on-error-container);
+  --color-surface: var(--md-sys-color-surface);
+  --color-surface-dim: var(--md-sys-color-surface-dim);
+  --color-surface-bright: var(--md-sys-color-surface-bright);
+  --color-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
+  --color-surface-container-low: var(--md-sys-color-surface-container-low);
+  --color-surface-container: var(--md-sys-color-surface-container);
+  --color-surface-container-high: var(--md-sys-color-surface-container-high);
+  --color-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --color-outline: var(--md-sys-color-outline);
+  --color-outline-variant: var(--md-sys-color-outline-variant);
+  --color-inverse-surface: var(--md-sys-color-inverse-surface);
+  --color-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
+  --color-inverse-primary: var(--md-sys-color-inverse-primary);
+  --color-scrim: var(--md-sys-color-scrim);
+  --color-blog: var(--blog-bg);
+
+  --radius-xs: var(--md-sys-shape-corner-extra-small);
+  --radius-sm: var(--md-sys-shape-corner-small);
+  --radius-md: var(--md-sys-shape-corner-medium);
+  --radius-lg: var(--md-sys-shape-corner-large);
+  --radius-xl: var(--md-sys-shape-corner-extra-large);
+
+  --ease-standard: var(--md-sys-motion-easing-standard);
+  --ease-emphasized: var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+/* Type scale (MD3 baseline, in rem so it follows the system text size). */
+@utility type-headline-small { font-size: 1.5rem; line-height: 2rem; font-weight: 400; }
+@utility type-title-large { font-size: 1.375rem; line-height: 1.75rem; font-weight: 400; }
+@utility type-title-medium { font-size: 1rem; line-height: 1.5rem; font-weight: 500; letter-spacing: 0.009rem; }
+@utility type-title-small { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; letter-spacing: 0.006rem; }
+@utility type-body-large { font-size: 1rem; line-height: 1.5rem; font-weight: 400; letter-spacing: 0.031rem; }
+@utility type-body-medium { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; letter-spacing: 0.016rem; }
+@utility type-body-small { font-size: 0.75rem; line-height: 1rem; font-weight: 400; letter-spacing: 0.025rem; }
+@utility type-label-large { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; letter-spacing: 0.006rem; }
+@utility type-label-medium { font-size: 0.75rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.031rem; }
+@utility type-label-small { font-size: 0.6875rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.031rem; }
+
+/*
+ * State layer: an overlay in the content color whose opacity signals hover,
+ * focus and press. Any interactive element opts in with `.state-layer`.
+ */
+@utility state-layer {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity var(--md-sys-motion-duration-short) linear;
+  }
+  &:hover:not(:disabled)::before { opacity: var(--md-sys-state-hover); }
+  &:focus-visible::before { opacity: var(--md-sys-state-focus); }
+  &:active:not(:disabled)::before { opacity: var(--md-sys-state-pressed); }
+}
+
+html, body, #app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+/* MD3 focus indicator: a thick secondary-colored ring offset from the target. */
+:focus-visible {
+  outline: 3px solid var(--md-sys-color-secondary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
