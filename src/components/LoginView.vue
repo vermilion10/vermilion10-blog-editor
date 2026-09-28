@@ -32,9 +32,10 @@ async function submit() {
 </script>
 
 <template>
-  <div class="relative flex h-full items-start justify-center overflow-y-auto bg-surface px-4 py-10 min-[600px]:items-center">
+  <div class="safe-area relative flex h-full items-start justify-center overflow-y-auto bg-surface">
+    <div class="flex w-full justify-center px-4 py-10 min-[600px]:my-auto">
     <MdIconButton
-      class="!absolute top-3 right-3"
+      class="!absolute top-[calc(12px+env(safe-area-inset-top))] right-[calc(12px+env(safe-area-inset-right))]"
       :icon="theme.mode === 'dark' ? 'light_mode' : 'dark_mode'"
       :label="theme.mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
       @click="toggleThemeMode"
@@ -75,5 +76,6 @@ async function submit() {
         {{ busy ? 'Checking access' : 'Sign in' }}
       </MdButton>
     </form>
+    </div>
   </div>
 </template>

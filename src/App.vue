@@ -5,6 +5,8 @@ import { openExternal, readJson, writeJson } from './lib/platform';
 import { confirmDialog } from './lib/dialogs';
 import { addImages, insertAtCursor, setCursorInserter } from './lib/images';
 import { loadR2Status } from './lib/r2';
+import { exit, onBackButtonPress } from '@tauri-apps/api/app';
+import { isTauri } from '@tauri-apps/api/core';
 import { theme, toggleThemeMode } from './lib/theme';
 import type { Snippet } from './lib/cheatsheet';
 import type { CommitResult } from './lib/github';
@@ -182,7 +184,25 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+// Android back gesture: close the topmost dialog, then step back to Posts on
+// phones, and only then leave the app (saving the draft first). Registering
+// the handler replaces the default, which would exit straight away.
+async function onBack() {
+  const dialogs = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
+  if (dialogs.length) {
+    dialogs[dialogs.length - 1].dispatchEvent(new Event('cancel'));
+    return;
+  }
+  if (singlePane.value && dest.value !== 'posts') {
+    dest.value = 'posts';
+    return;
+  }
+  flushDraft();
+  await exit(0);
+}
+
 onMounted(() => {
+  if (isTauri()) void onBackButtonPress(() => void onBack());
   Object.values(mql).forEach((m) => m.addEventListener('change', measure));
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('beforeunload', flushDraft);
@@ -204,7 +224,7 @@ onBeforeUnmount(() => {
 
   <LoginView v-else-if="!state.token" />
 
-  <div v-else class="flex h-full bg-surface-container" :class="isCompact ? 'flex-col' : 'flex-row'">
+  <div v-else class="safe-area flex h-full bg-surface-container" :class="isCompact ? 'safe-area--own-bottom flex-col' : 'flex-row'">
     <!-- Navigation rail (medium and up) -->
     <AppNav v-if="!isCompact" kind="rail" :items="navItems" :active="activeNav" @select="onNav">
       <template #fab>
@@ -352,7 +372,7 @@ onBeforeUnmount(() => {
     <div
       v-if="snackbar"
       class="fixed left-1/2 z-50 flex w-[calc(100%-32px)] max-w-[560px] -translate-x-1/2 items-center gap-2 rounded-xs bg-inverse-surface py-1 pr-2 pl-4 text-inverse-on-surface shadow-lg"
-      :class="isCompact ? 'bottom-[calc(96px+env(safe-area-inset-bottom))]' : 'bottom-6'"
+      :class="isCompact ? 'bottom-[calc(96px+env(safe-area-inset-bottom))]' : 'bottom-[calc(24px+env(safe-area-inset-bottom))]'"
       role="status"
     >
       <span class="type-body-medium flex-1 py-3">{{ snackbar.text }}</span>

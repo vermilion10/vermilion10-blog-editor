@@ -8,7 +8,8 @@ import MdIcon from './md/MdIcon.vue';
 import RepoFields from './RepoFields.vue';
 import R2Settings from './R2Settings.vue';
 import { signOut, state, updateConfig } from '../lib/store';
-import { DEFAULT_SEED, SEED_PRESETS, isValidHex, theme } from '../lib/theme';
+import { DEFAULT_SEED, SEED_PRESETS, isValidHex, systemAccent, theme } from '../lib/theme';
+import MdSwitch from './md/MdSwitch.vue';
 
 const emit = defineEmits<{ close: [] }>();
 
@@ -61,6 +62,11 @@ async function logout() {
           ]"
         />
 
+        <div v-if="systemAccent" class="-mx-4 mt-4">
+          <MdSwitch v-model="theme.useSystemColor" label="Use wallpaper colors" supporting="Follows the accent Android picks from your wallpaper" />
+        </div>
+
+        <div :class="{ 'pointer-events-none opacity-38': theme.useSystemColor && systemAccent }" :aria-disabled="theme.useSystemColor && !!systemAccent">
         <p class="type-label-large mt-6 mb-3 text-on-surface">Theme color</p>
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Theme color">
           <button
@@ -88,6 +94,7 @@ async function logout() {
         <div class="mt-4 flex items-start gap-3">
           <MdTextField v-model="hex" label="Hex" mono class="max-w-[180px] flex-1" autocomplete="off" :error="hexError || undefined" />
           <MdButton v-if="theme.seed !== DEFAULT_SEED" class="mt-2" @click="theme.seed = DEFAULT_SEED">Reset to orange</MdButton>
+        </div>
         </div>
       </section>
 

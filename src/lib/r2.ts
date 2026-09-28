@@ -59,8 +59,19 @@ export function listObjects(prefix: string): Promise<R2Object[]> {
   return invoke<R2Object[]>('r2_list', { prefix });
 }
 
+// Android's WebView can't hand a raw body to the app, so there the file goes
+// as base64 inside JSON. Desktop sends the bytes as they are.
+const rawBodies = !/Android/i.test(navigator.userAgent);
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
 export async function putObject(key: string, bytes: Uint8Array, contentType: string): Promise<void> {
-  await invoke('r2_put', bytes, { headers: { 'x-key': key, 'x-content-type': contentType } });
+  if (rawBodies) await invoke('r2_put', bytes, { headers: { 'x-key': key, 'x-content-type': contentType } });
+  else await invoke('r2_put', { key, contentType, data: toBase64(bytes) });
 }
 
 // --- Key conventions ------------------------------------------------------------

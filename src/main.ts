@@ -35,4 +35,19 @@ window.fetch = (input, init) => {
   return nativeFetch(input, init);
 };
 
+// On Android the app is drawn edge to edge and the system no longer resizes
+// it for the on-screen keyboard, which then covers the lower half of the
+// editor. The visual viewport reports the area left above the keyboard, so the
+// app sizes itself to that.
+const viewport = window.visualViewport;
+if (viewport) {
+  const fit = () => {
+    const root = document.documentElement;
+    root.style.setProperty('--app-height', `${viewport.height}px`);
+    root.classList.toggle('keyboard-open', window.innerHeight - viewport.height > 120);
+  };
+  viewport.addEventListener('resize', fit);
+  fit();
+}
+
 createApp(App).mount('#app');

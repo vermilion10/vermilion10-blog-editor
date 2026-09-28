@@ -9,6 +9,8 @@
 use std::sync::LazyLock;
 use std::time::Duration;
 
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine as _;
 use rusty_s3::actions::ListObjectsV2;
 use rusty_s3::{Bucket, Credentials, S3Action, UrlStyle};
 use serde::{Deserialize, Serialize};
@@ -147,7 +149,7 @@ async fn list(client: &Client, prefix: &str, limit: usize) -> Result<Vec<R2Objec
 }
 
 #[tauri::command]
-pub fn r2_status(app: tauri::AppHandle) -> Result<Option<R2Status>, String> {
+pub async fn r2_status(app: tauri::AppHandle) -> Result<Option<R2Status>, String> {
   match crate::secret::load(&app, CONFIG_KEY)? {
     None => Ok(None),
     Some(raw) => {
@@ -167,7 +169,7 @@ pub async fn r2_save(app: tauri::AppHandle, config: R2Config) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn r2_clear(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn r2_clear(app: tauri::AppHandle) -> Result<(), String> {
   crate::secret::remove(&app, CONFIG_KEY)
 }
 
@@ -185,23 +187,40 @@ pub async fn r2_list(app: tauri::AppHandle, prefix: String) -> Result<Vec<R2Obje
   list(&client, &prefix, 500).await
 }
 
-/// Uploads the raw request body. Headers: `x-key`, `x-content-type`.
+/// JSON form of an upload, used where raw bodies can't be sent (Android's
+/// WebView has no way to pass a request body to the app, so Tauri sends JSON).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PutJson {
+  key: String,
+  content_type: String,
+  /// The file, base64-encoded.
+  data: String,
+}
+
+/// Uploads a new object. Desktop sends the file as a raw body with `x-key` and
+/// `x-content-type` headers; Android sends `PutJson`.
 #[tauri::command]
 pub async fn r2_put(app: tauri::AppHandle, request: Request<'_>) -> Result<(), String> {
-  let header = |name: &str| {
-    request
-      .headers()
-      .get(name)
-      .and_then(|v| v.to_str().ok())
-      .map(str::to_string)
-      .ok_or(format!("missing {name} header"))
+  let (key, content_type, bytes) = match request.body() {
+    InvokeBody::Raw(bytes) => {
+      let header = |name: &str| {
+        request
+          .headers()
+          .get(name)
+          .and_then(|v| v.to_str().ok())
+          .map(str::to_string)
+          .ok_or(format!("missing {name} header"))
+      };
+      (header("x-key")?, header("x-content-type")?, bytes.clone())
+    }
+    InvokeBody::Json(value) => {
+      let put: PutJson = serde_json::from_value(value.clone()).map_err(|e| format!("bad upload request: {e}"))?;
+      let bytes = BASE64.decode(put.data.as_bytes()).map_err(|e| format!("bad upload data: {e}"))?;
+      (put.key, put.content_type, bytes)
+    }
   };
-  let key = header("x-key")?;
-  let content_type = header("x-content-type")?;
   check_key(&key)?;
-  let InvokeBody::Raw(bytes) = request.body() else {
-    return Err("expected the file as a raw body".into());
-  };
 
   let client = client_for(&load_config(&app)?)?;
   if head(&client, &key).await?.is_some() {
@@ -211,7 +230,7 @@ pub async fn r2_put(app: tauri::AppHandle, request: Request<'_>) -> Result<(), S
   let res = HTTP
     .put(url)
     .header("content-type", content_type)
-    .body(bytes.clone())
+    .body(bytes)
     .send()
     .await
     .map_err(net_err)?;

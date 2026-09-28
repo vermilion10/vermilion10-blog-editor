@@ -1,9 +1,9 @@
-//! Storage for the GitHub token.
+//! Storage for tokens (GitHub, R2).
 //!
-//! On desktop the token lives in the OS credential store (Windows Credential
-//! Manager, macOS Keychain, Secret Service on Linux), so it never touches a
-//! plain file. Mobile has no such store wired up yet and falls back to a file
-//! in the app's private data directory, which other apps cannot read.
+//! On desktop they live in the OS credential store (Windows Credential
+//! Manager, macOS Keychain, Secret Service on Linux). On Android they are
+//! encrypted with a key held in the Android Keystore. Neither touches a plain
+//! file.
 
 #[cfg_attr(mobile, allow(dead_code))]
 const SERVICE: &str = "vermilion10-blog-editor";
@@ -36,35 +36,20 @@ mod store {
   }
 }
 
-#[cfg(mobile)]
+// Android: AES-256-GCM with a key held in the Android Keystore (see
+// device.rs and DevicePlugin.kt). Only ciphertext is stored.
+#[cfg(target_os = "android")]
 mod store {
-  use std::path::PathBuf;
-  use tauri::Manager;
-
-  fn path(app: &tauri::AppHandle, key: &str) -> Result<PathBuf, String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    Ok(dir.join(format!("{key}.secret")))
-  }
-
   pub fn get(app: &tauri::AppHandle, key: &str) -> Result<Option<String>, String> {
-    match std::fs::read_to_string(path(app, key)?) {
-      Ok(value) => Ok(Some(value)),
-      Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-      Err(e) => Err(e.to_string()),
-    }
+    crate::device::secret_get(app, key)
   }
 
   pub fn set(app: &tauri::AppHandle, key: &str, value: &str) -> Result<(), String> {
-    std::fs::write(path(app, key)?, value).map_err(|e| e.to_string())
+    crate::device::secret_set(app, key, value)
   }
 
   pub fn delete(app: &tauri::AppHandle, key: &str) -> Result<(), String> {
-    match std::fs::remove_file(path(app, key)?) {
-      Ok(()) => Ok(()),
-      Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-      Err(e) => Err(e.to_string()),
-    }
+    crate::device::secret_delete(app, key)
   }
 }
 
@@ -87,20 +72,21 @@ fn check_js_key(key: &str) -> Result<(), String> {
   Ok(())
 }
 
+// Async so that on Android the call into Kotlin doesn't block the main thread.
 #[tauri::command]
-pub fn secret_get(app: tauri::AppHandle, key: String) -> Result<Option<String>, String> {
+pub async fn secret_get(app: tauri::AppHandle, key: String) -> Result<Option<String>, String> {
   check_js_key(&key)?;
   store::get(&app, &key)
 }
 
 #[tauri::command]
-pub fn secret_set(app: tauri::AppHandle, key: String, value: String) -> Result<(), String> {
+pub async fn secret_set(app: tauri::AppHandle, key: String, value: String) -> Result<(), String> {
   check_js_key(&key)?;
   store::set(&app, &key, &value)
 }
 
 #[tauri::command]
-pub fn secret_delete(app: tauri::AppHandle, key: String) -> Result<(), String> {
+pub async fn secret_delete(app: tauri::AppHandle, key: String) -> Result<(), String> {
   check_js_key(&key)?;
   store::delete(&app, &key)
 }

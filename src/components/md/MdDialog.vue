@@ -33,7 +33,7 @@ onMounted(() => dialog.value?.showModal());
 .md-dialog {
   width: calc(100% - 48px);
   max-width: 560px;
-  max-height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   margin: auto;
   padding: 0;
   border: 0;

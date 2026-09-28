@@ -16,8 +16,8 @@ defineEmits<{ select: [id: T] }>();
   <nav
     class="flex shrink-0 bg-surface-container"
     :class="kind === 'bar'
-      ? 'h-[calc(80px+env(safe-area-inset-bottom))] items-stretch justify-around pb-[env(safe-area-inset-bottom)]'
-      : 'w-20 flex-col items-center gap-3 py-4 pl-[env(safe-area-inset-left)]'"
+      ? 'keyboard-hides h-[calc(80px+env(safe-area-inset-bottom))] items-stretch justify-around pb-[env(safe-area-inset-bottom)]'
+      : 'w-20 flex-col items-center gap-3 py-4'"
     aria-label="Main"
   >
     <div v-if="kind === 'rail' && $slots.fab" class="mb-4"><slot name="fab" /></div>

@@ -149,8 +149,21 @@
   &:active:not(:disabled)::before { opacity: var(--md-sys-state-pressed); }
 }
 
-html, body, #app {
+html, body {
   height: 100%;
+}
+
+#app {
+  height: var(--app-height, 100%);
+}
+
+/* With the keyboard up, its edge is the bottom: no gesture-bar inset, and the
+   phone navigation bar makes way for the text being typed. */
+.keyboard-open .safe-area {
+  padding-bottom: 0;
+}
+.keyboard-open nav.keyboard-hides {
+  display: none;
 }
 
 body {
@@ -161,6 +174,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
+}
+
+/*
+ * Android draws the app edge to edge, under the status bar and the gesture
+ * or button bar. The WebView reports their size as safe-area insets; screens
+ * pad themselves by them so nothing sits under the system bars.
+ */
+.safe-area {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* The phone bottom bar pads its own bottom so its surface reaches the edge. */
+.safe-area--own-bottom {
+  padding-bottom: 0;
 }
 
 button {

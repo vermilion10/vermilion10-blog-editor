@@ -1,3 +1,4 @@
+mod device;
 mod r2;
 mod secret;
 
@@ -5,6 +6,7 @@ mod secret;
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
+    .plugin(device::init())
     .invoke_handler(tauri::generate_handler![
       secret::secret_get,
       secret::secret_set,
@@ -15,6 +17,8 @@ pub fn run() {
       r2::r2_head,
       r2::r2_list,
       r2::r2_put,
+      device::system_accent,
+      device::set_system_bars,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
