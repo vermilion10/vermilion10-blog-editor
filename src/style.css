@@ -43,6 +43,9 @@
   --cm-function: #dcbdfb;
   --cm-type: #f69d50;
   --cm-property: #8ddb8c;
+  --diff-added: #57ab5a;
+  --diff-modified: #539bf5;
+  --diff-deleted: #e5534b;
 }
 
 :root[data-theme='light'] {
@@ -59,6 +62,9 @@
   --cm-function: #8250df;
   --cm-type: #953800;
   --cm-property: #116329;
+  --diff-added: #2da44e;
+  --diff-modified: #0969da;
+  --diff-deleted: #cf222e;
 }
 
 @theme inline {

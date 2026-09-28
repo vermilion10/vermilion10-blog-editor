@@ -14,11 +14,14 @@ import { yamlFrontmatter } from '@codemirror/lang-yaml';
 import { tags as t } from '@lezer/highlight';
 import type { Snippet } from '../lib/cheatsheet';
 import { addImages, imageFilesIn } from '../lib/images';
+import { changeGutter, setChangeBase } from '../lib/change-gutter';
 
 const props = defineProps<{
   modelValue: string;
   /** Changing this starts a fresh editor state (new undo history). */
   docKey: string;
+  /** The published text to mark changes against; null shows no markers. */
+  base?: string | null;
 }>();
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
@@ -70,6 +73,20 @@ const theme = EditorView.theme({
   '.cm-button': { backgroundImage: 'none', backgroundColor: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)', border: 'none', borderRadius: '9999px', padding: '2px 10px' },
   '.cm-searchMatch': { backgroundColor: 'color-mix(in srgb, var(--md-sys-color-tertiary) 30%, transparent)' },
   '.cm-placeholder': { color: 'var(--md-sys-color-on-surface-variant)' },
+  // Change markers: a slim bar right of the line numbers, as in other editors.
+  '.cm-change-gutter .cm-gutterElement': { width: '4px', padding: '0', marginRight: '4px' },
+  '.cm-change': { height: '100%', width: '4px', borderRadius: '1px', cursor: 'help' },
+  '.cm-change--added': { background: 'var(--diff-added)' },
+  '.cm-change--modified': { background: 'var(--diff-modified)' },
+  '.cm-change--deleted': {
+    height: '0',
+    width: '0',
+    marginTop: '-4px',
+    borderTop: '4px solid transparent',
+    borderBottom: '4px solid transparent',
+    borderLeft: '6px solid var(--diff-deleted)',
+    borderRadius: '0',
+  },
 });
 
 /** Wraps the selection in `before`/`after`, or inserts both with the cursor between. */
@@ -117,6 +134,7 @@ function takeImages(v: EditorView, data: DataTransfer | null, at: number | null,
 function extensions(): Extension[] {
   return [
     lineNumbers(),
+    changeGutter(),
     highlightActiveLineGutter(),
     highlightActiveLine(),
     drawSelection(),
@@ -152,13 +170,22 @@ function freshState(doc: string) {
   return EditorState.create({ doc, extensions: extensions() });
 }
 
+function applyBase() {
+  view?.dispatch({ effects: setChangeBase.of(props.base ?? null) });
+}
+
 onMounted(() => {
   view = new EditorView({ state: freshState(props.modelValue), parent: host.value! });
+  applyBase();
 });
 
 onBeforeUnmount(() => view?.destroy());
 
-watch(() => props.docKey, () => view?.setState(freshState(props.modelValue)));
+watch(() => props.docKey, () => {
+  view?.setState(freshState(props.modelValue));
+  applyBase();
+});
+watch(() => props.base, applyBase);
 
 // Outside edits (the frontmatter form) arrive as a whole new string. Replace
 // only the span that differs so the cursor and undo history survive.

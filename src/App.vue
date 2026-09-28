@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
         <div v-show="dest === 'write'" class="h-full">
           <template v-if="state.doc">
             <div v-show="effectiveView === 'code'" class="h-full">
-              <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" />
+              <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" :base="state.doc.baseSha === null ? null : state.doc.baseContent" />
             </div>
             <VisualEditor v-if="effectiveView === 'visual'" ref="visual" v-model="state.doc.content" :doc-key="state.doc.path" />
             <PreviewPane v-if="effectiveView === 'preview' && dest === 'write'" :content="state.doc.content" :width-toggle="!isCompact" />
@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex min-h-0 flex-1 gap-2">
             <section v-show="effectiveView === 'code' || effectiveView === 'split'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface" aria-label="Markdown source">
-              <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" />
+              <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" :base="state.doc.baseSha === null ? null : state.doc.baseContent" />
             </section>
             <section v-if="effectiveView === 'visual'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface" aria-label="Visual editor">
               <VisualEditor ref="visual" v-model="state.doc.content" :doc-key="state.doc.path" />
