@@ -9,6 +9,8 @@ withDefaults(defineProps<{
   label: string;
   variant?: 'standard' | 'filled' | 'tonal';
   selected?: boolean;
+  /** A toggle button: exposes `selected` as aria-pressed. */
+  toggle?: boolean;
 }>(), { variant: 'standard' });
 </script>
 
@@ -19,6 +21,7 @@ withDefaults(defineProps<{
     :class="[`md-icon-button--${variant}`, { 'is-selected': selected }]"
     :aria-label="label"
     :title="label"
+    :aria-pressed="toggle ? selected : undefined"
   >
     <MdIcon :name="icon" />
   </button>
@@ -46,6 +49,12 @@ withDefaults(defineProps<{
 
 .md-icon-button.is-selected {
   color: var(--md-sys-color-primary);
+}
+
+/* Toggle buttons in a toolbar: selected ones get a tonal container. */
+.md-icon-button[aria-pressed='true'] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
 }
 
 .md-icon-button--filled {

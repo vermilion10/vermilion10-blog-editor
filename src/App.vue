@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { boot, discardLocalChanges, docMeta, flushDraft, isDirty, openPost, refreshPosts, state, type PostEntry } from './lib/store';
-import { openExternal } from './lib/platform';
+import { openExternal, readJson, writeJson } from './lib/platform';
+import { confirmDialog } from './lib/dialogs';
 import { theme, toggleThemeMode } from './lib/theme';
 import type { Snippet } from './lib/cheatsheet';
 import type { CommitResult } from './lib/github';
@@ -12,6 +13,8 @@ import FrontmatterForm from './components/FrontmatterForm.vue';
 import CheatSheet from './components/CheatSheet.vue';
 import CodeEditor from './components/CodeEditor.vue';
 import PreviewPane from './components/PreviewPane.vue';
+import VisualEditor from './components/visual/VisualEditor.vue';
+import DialogHost from './components/DialogHost.vue';
 import NewPostDialog from './components/NewPostDialog.vue';
 import PublishDialog from './components/PublishDialog.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
@@ -43,11 +46,13 @@ const singlePane = computed(() => windowClass.value === 'compact' || windowClass
 // --- Navigation -------------------------------------------------------------
 type Dest = 'posts' | 'write' | 'details' | 'syntax';
 type Pane = Exclude<Dest, 'write'>;
-type EditorView = 'code' | 'split' | 'preview';
+type EditorView = 'code' | 'visual' | 'split' | 'preview';
 
 const dest = ref<Dest>('posts');
 const pane = ref<Pane | null>('posts');
-const editorView = ref<EditorView>('split');
+// The last view picked is remembered on this device.
+const editorView = ref<EditorView>(readJson<EditorView>('editor-view', 'split'));
+watch(editorView, (v) => writeJson('editor-view', v));
 
 const NAV: { id: Dest; label: string; icon: IconName; activeIcon: IconName }[] = [
   { id: 'posts', label: 'Posts', icon: 'description', activeIcon: 'description-fill' },
@@ -73,6 +78,7 @@ const effectiveView = computed<EditorView>(() =>
 );
 const viewOptions = computed(() => [
   { value: 'code' as const, label: 'Code', icon: 'code' as const },
+  { value: 'visual' as const, label: 'Visual', icon: 'edit_note' as const },
   ...(windowClass.value === 'large' ? [{ value: 'split' as const, label: 'Split', icon: 'vertical_split' as const }] : []),
   { value: 'preview' as const, label: 'Preview', icon: 'visibility' as const },
 ]);
@@ -97,6 +103,7 @@ const docStatus = computed(() => {
 
 const dialog = ref<'new' | 'publish' | 'settings' | null>(null);
 const editor = ref<InstanceType<typeof CodeEditor>>();
+const visual = ref<InstanceType<typeof VisualEditor>>();
 
 const snackbar = ref<{ text: string; link?: string } | null>(null);
 let snackTimer: number | undefined;
@@ -130,12 +137,13 @@ function onPublished(result: CommitResult) {
   notify('Published. The site redeploys in a minute or two.', result.url);
 }
 
-function onDiscard() {
+async function onDiscard() {
   if (!state.doc) return;
-  const msg = state.doc.baseSha === null
-    ? 'Delete this unpublished draft? This cannot be undone.'
-    : 'Discard your local changes and go back to the published version?';
-  if (window.confirm(msg)) discardLocalChanges();
+  const isNew = state.doc.baseSha === null;
+  const ok = await confirmDialog(isNew
+    ? { headline: 'Delete this draft?', body: 'It was never published, so it will be gone for good.', confirmLabel: 'Delete draft', danger: true }
+    : { headline: 'Discard local changes?', body: 'The post goes back to the version that is published on GitHub.', confirmLabel: 'Discard', danger: true });
+  if (ok) discardLocalChanges();
 }
 
 async function onInsert(snippet: Snippet) {
@@ -143,7 +151,8 @@ async function onInsert(snippet: Snippet) {
   if (singlePane.value) dest.value = 'write';
   if (effectiveView.value === 'preview') editorView.value = windowClass.value === 'large' ? 'split' : 'code';
   await nextTick();
-  editor.value?.insertSnippet(snippet);
+  if (effectiveView.value === 'visual') visual.value?.insertSnippet(snippet);
+  else editor.value?.insertSnippet(snippet);
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -233,9 +242,10 @@ onBeforeUnmount(() => {
 
         <div v-show="dest === 'write'" class="h-full">
           <template v-if="state.doc">
-            <div v-show="effectiveView !== 'preview'" class="h-full">
+            <div v-show="effectiveView === 'code'" class="h-full">
               <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" />
             </div>
+            <VisualEditor v-if="effectiveView === 'visual'" ref="visual" v-model="state.doc.content" :doc-key="state.doc.path" />
             <PreviewPane v-if="effectiveView === 'preview' && dest === 'write'" :content="state.doc.content" :width-toggle="!isCompact" />
           </template>
           <NoPostOpen v-else what="Pick one to write in, or start a new one." show-browse @browse="dest = 'posts'" @create="dialog = 'new'" />
@@ -291,10 +301,13 @@ onBeforeUnmount(() => {
             </TopBar>
           </div>
           <div class="flex min-h-0 flex-1 gap-2">
-            <section v-show="effectiveView !== 'preview'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface" aria-label="Markdown source">
+            <section v-show="effectiveView === 'code' || effectiveView === 'split'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface" aria-label="Markdown source">
               <CodeEditor ref="editor" v-model="state.doc.content" :doc-key="state.doc.path" />
             </section>
-            <section v-if="effectiveView !== 'code'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface-container-low" aria-label="Preview">
+            <section v-if="effectiveView === 'visual'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface" aria-label="Visual editor">
+              <VisualEditor ref="visual" v-model="state.doc.content" :doc-key="state.doc.path" />
+            </section>
+            <section v-if="effectiveView === 'split' || effectiveView === 'preview'" class="min-w-0 flex-1 overflow-hidden rounded-xl bg-surface-container-low" aria-label="Preview">
               <PreviewPane :content="state.doc.content" width-toggle />
             </section>
           </div>
@@ -316,6 +329,7 @@ onBeforeUnmount(() => {
     <NewPostDialog v-if="dialog === 'new'" @close="dialog = null" @created="onCreated" />
     <PublishDialog v-if="dialog === 'publish'" @close="dialog = null" @published="onPublished" />
     <SettingsDialog v-if="dialog === 'settings'" @close="dialog = null" />
+    <DialogHost />
 
     <div
       v-if="snackbar"

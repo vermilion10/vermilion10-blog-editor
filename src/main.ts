@@ -8,6 +8,7 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './style.css';
 import './lib/theme';
+import './lib/mermaid-cache';
 import App from './App.vue';
 
 // The preview re-renders on every pause in typing, and each render of a
@@ -21,9 +22,11 @@ window.fetch = (input, init) => {
   if (/^https:\/\/api\.github\.com\/repos\/[^/]+\/[^/?]+$/.test(url) && !init?.method && !(init?.headers as Record<string, string>)?.Authorization) {
     let hit = repoCache.get(url);
     if (!hit) {
-      hit = nativeFetch(input, init).then((res) => {
-        if (!res.ok) repoCache.delete(url);
-        return res;
+      // Failures (a mistyped or placeholder repo) are kept too, so a card being
+      // edited doesn't hit the API on every keystroke. Network errors retry.
+      hit = nativeFetch(input, init).catch((err) => {
+        repoCache.delete(url);
+        throw err;
       });
       repoCache.set(url, hit);
     }

@@ -52,6 +52,13 @@ const model = defineModel<T>({ required: true });
   white-space: nowrap;
 }
 
+/* 48px touch target around the 40px visual, as MD3 specifies. */
+.md-segmented__item::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
 .md-segmented__item + .md-segmented__item {
   margin-left: -1px;
 }
