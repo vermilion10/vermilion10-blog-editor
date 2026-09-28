@@ -23,8 +23,22 @@ export async function deleteSecret(key: string): Promise<void> {
 }
 
 export async function openExternal(url: string): Promise<void> {
-  if (inTauri) return openUrl(url);
-  window.open(url, '_blank', 'noopener');
+  try {
+    if (inTauri) await openUrl(url);
+    else window.open(url, '_blank', 'noopener');
+  } catch (err) {
+    // Never fail silently: hand the link over so it can be opened by hand.
+    console.error('Could not open link', err);
+    const { promptDialog } = await import('./dialogs');
+    await promptDialog({
+      headline: 'Couldn’t open the browser',
+      label: 'Link',
+      value: url,
+      supporting: 'Copy the link and open it in your browser.',
+      confirmLabel: 'Done',
+      mono: true,
+    });
+  }
 }
 
 export function readJson<T>(key: string, fallback: T): T {

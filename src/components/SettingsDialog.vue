@@ -6,6 +6,7 @@ import MdSegmented from './md/MdSegmented.vue';
 import MdTextField from './md/MdTextField.vue';
 import MdIcon from './md/MdIcon.vue';
 import RepoFields from './RepoFields.vue';
+import R2Settings from './R2Settings.vue';
 import { signOut, state, updateConfig } from '../lib/store';
 import { DEFAULT_SEED, SEED_PRESETS, isValidHex, theme } from '../lib/theme';
 
@@ -48,7 +49,7 @@ async function logout() {
 
 <template>
   <MdDialog headline="Settings" @close="emit('close')">
-    <form id="settings" class="space-y-8" @submit.prevent="save">
+    <div class="space-y-8">
       <section>
         <h3 class="type-title-medium mb-4 text-on-surface">Appearance</h3>
         <MdSegmented
@@ -90,11 +91,13 @@ async function logout() {
         </div>
       </section>
 
-      <section>
+      <form id="settings" @submit.prevent="save">
         <h3 class="type-title-medium mb-4 text-on-surface">Repository</h3>
         <RepoFields v-model="config" />
         <p v-if="error" class="type-body-medium mt-4 rounded-md bg-error-container p-3 text-on-error-container">{{ error }}</p>
-      </section>
+      </form>
+
+      <R2Settings />
 
       <section>
         <h3 class="type-title-medium mb-2 text-on-surface">Account</h3>
@@ -103,7 +106,7 @@ async function logout() {
           <MdButton variant="outlined" icon="logout" @click="logout">Sign out</MdButton>
         </div>
       </section>
-    </form>
+    </div>
     <template #actions>
       <MdButton @click="emit('close')">{{ repoChanged ? 'Cancel' : 'Done' }}</MdButton>
       <MdButton v-if="repoChanged" type="submit" form="settings" :loading="busy" :disabled="busy">Save repository</MdButton>

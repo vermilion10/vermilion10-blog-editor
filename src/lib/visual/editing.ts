@@ -286,3 +286,27 @@ export function buildPlugins(onLink: (view: EditorView) => void): Plugin[] {
     placeholder('Start writing, or insert a block from Syntax'),
   ];
 }
+
+/**
+ * Inserts parsed Markdown as blocks near `pos`: after the block containing it,
+ * into it when that block is an empty paragraph, or exactly at `pos` when it
+ * already sits between blocks. Returns the position after the insertion.
+ */
+export function insertMarkdownBlocksAt(view: EditorView, pos: number, markdown: string): number {
+  const { state } = view;
+  const content = parseSnippet(markdown).content;
+  const $pos = state.doc.resolve(Math.min(pos, state.doc.content.size));
+  let tr = state.tr;
+  let at: number;
+  if ($pos.depth === 0) {
+    at = $pos.pos;
+    tr = tr.insert(at, content);
+  } else {
+    const block = blockAt(state, $pos.index(0))!;
+    const empty = block.node.type === nodes.paragraph && block.node.content.size === 0;
+    at = empty ? block.pos : block.pos + block.node.nodeSize;
+    tr = empty ? tr.replaceWith(block.pos, block.pos + block.node.nodeSize, content) : tr.insert(at, content);
+  }
+  view.dispatch(tr.scrollIntoView());
+  return at + content.size;
+}

@@ -13,6 +13,7 @@ import { languages } from '@codemirror/language-data';
 import { yamlFrontmatter } from '@codemirror/lang-yaml';
 import { tags as t } from '@lezer/highlight';
 import type { Snippet } from '../lib/cheatsheet';
+import { addImages, imageFilesIn } from '../lib/images';
 
 const props = defineProps<{
   modelValue: string;
@@ -86,6 +87,33 @@ function wrapWith(before: string, after: string) {
   };
 }
 
+/**
+ * Inserts `text` as its own block at `pos` (blank lines around it) and
+ * returns the position just after it.
+ */
+function insertBlockAt(v: EditorView, pos: number, text: string): number {
+  const { state } = v;
+  const at = Math.min(pos, state.doc.length);
+  const before = state.sliceDoc(Math.max(0, at - 2), at);
+  const after = state.sliceDoc(at, at + 2);
+  const prefix = at === 0 || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+  const suffix = at === state.doc.length ? '\n' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+  v.dispatch({ changes: { from: at, insert: prefix + text + suffix }, scrollIntoView: true });
+  return at + prefix.length + text.length;
+}
+
+// Dropped or pasted images go to the upload dialog; once uploaded they are
+// inserted where they were dropped (the dialog is modal, so that spot can't
+// move meanwhile).
+function takeImages(v: EditorView, data: DataTransfer | null, at: number | null, event: Event): boolean {
+  const files = imageFilesIn(data);
+  if (!files.length) return false;
+  event.preventDefault();
+  let pos = at ?? v.state.selection.main.head;
+  addImages(files, { kind: 'insert', insert: (md) => { pos = insertBlockAt(v, pos, md); } });
+  return true;
+}
+
 function extensions(): Extension[] {
   return [
     lineNumbers(),
@@ -110,6 +138,10 @@ function extensions(): Extension[] {
       ...searchKeymap,
       indentWithTab,
     ]),
+    EditorView.domEventHandlers({
+      drop: (event, v) => takeImages(v, event.dataTransfer, v.posAtCoords({ x: event.clientX, y: event.clientY }), event),
+      paste: (event, v) => takeImages(v, event.clipboardData, null, event),
+    }),
     EditorView.updateListener.of((u) => {
       if (u.docChanged) emit('update:modelValue', u.state.doc.toString());
     }),

@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { boot, discardLocalChanges, docMeta, flushDraft, isDirty, openPost, refreshPosts, state, type PostEntry } from './lib/store';
 import { openExternal, readJson, writeJson } from './lib/platform';
 import { confirmDialog } from './lib/dialogs';
+import { addImages, insertAtCursor, setCursorInserter } from './lib/images';
+import { loadR2Status } from './lib/r2';
 import { theme, toggleThemeMode } from './lib/theme';
 import type { Snippet } from './lib/cheatsheet';
 import type { CommitResult } from './lib/github';
@@ -15,6 +17,7 @@ import CodeEditor from './components/CodeEditor.vue';
 import PreviewPane from './components/PreviewPane.vue';
 import VisualEditor from './components/visual/VisualEditor.vue';
 import DialogHost from './components/DialogHost.vue';
+import ImageDialog from './components/ImageDialog.vue';
 import NewPostDialog from './components/NewPostDialog.vue';
 import PublishDialog from './components/PublishDialog.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
@@ -155,6 +158,17 @@ async function onInsert(snippet: Snippet) {
   else editor.value?.insertSnippet(snippet);
 }
 
+// Uploaded images (from the Add image button or the post image gallery) go
+// in at the cursor of whichever editor is showing.
+setCursorInserter((markdown) => void onInsert({ label: 'Image', text: markdown, block: true }));
+
+const imagePicker = ref<HTMLInputElement>();
+function onImagePick(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.files?.length) addImages(input.files, { kind: 'insert', insert: insertAtCursor });
+  input.value = '';
+}
+
 function onKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
     event.preventDefault();
@@ -173,6 +187,7 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('beforeunload', flushDraft);
   void boot();
+  void loadR2Status();
 });
 
 onBeforeUnmount(() => {
@@ -234,6 +249,7 @@ onBeforeUnmount(() => {
           :icon-only="isCompact"
           :options="viewOptions"
         />
+        <MdIconButton v-if="state.doc" icon="add_photo_alternate" label="Add image" @click="imagePicker?.click()" />
         <DocActions :compact="isCompact" @discard="onDiscard" @publish="dialog = 'publish'" />
       </TopBar>
 
@@ -297,6 +313,7 @@ onBeforeUnmount(() => {
           <div class="rounded-xl bg-surface">
             <TopBar :title="docTitle" :subtitle="docStatus">
               <MdSegmented v-model="viewModel" label="Editor view" :options="viewOptions" class="mr-2" />
+              <MdIconButton icon="add_photo_alternate" label="Add image" @click="imagePicker?.click()" />
               <DocActions @discard="onDiscard" @publish="dialog = 'publish'" />
             </TopBar>
           </div>
@@ -329,7 +346,8 @@ onBeforeUnmount(() => {
     <NewPostDialog v-if="dialog === 'new'" @close="dialog = null" @created="onCreated" />
     <PublishDialog v-if="dialog === 'publish'" @close="dialog = null" @published="onPublished" />
     <SettingsDialog v-if="dialog === 'settings'" @close="dialog = null" />
-    <DialogHost />
+    <ImageDialog @open-settings="dialog = 'settings'" />
+    <input ref="imagePicker" type="file" accept="image/*" multiple class="hidden" @change="onImagePick" />
 
     <div
       v-if="snackbar"
@@ -349,4 +367,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
   </div>
+
+  <!-- Outside the signed-in layout so it also serves the sign-in screen. -->
+  <DialogHost />
 </template>

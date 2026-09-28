@@ -5,6 +5,7 @@ import icEditNote from '@material-symbols/svg-400/rounded/edit_note.svg?raw';
 import icTune from '@material-symbols/svg-400/rounded/tune.svg?raw';
 import icMenuBook from '@material-symbols/svg-400/rounded/menu_book.svg?raw';
 import icAdd from '@material-symbols/svg-400/rounded/add.svg?raw';
+import icAddPhotoAlternate from '@material-symbols/svg-400/rounded/add_photo_alternate.svg?raw';
 import icRefresh from '@material-symbols/svg-400/rounded/refresh.svg?raw';
 import icSearch from '@material-symbols/svg-400/rounded/search.svg?raw';
 import icSettings from '@material-symbols/svg-400/rounded/settings.svg?raw';
@@ -67,6 +68,7 @@ export const ICONS = {
   tune: icTune,
   menu_book: icMenuBook,
   add: icAdd,
+  add_photo_alternate: icAddPhotoAlternate,
   refresh: icRefresh,
   search: icSearch,
   settings: icSettings,

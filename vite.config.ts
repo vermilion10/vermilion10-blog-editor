@@ -22,6 +22,12 @@ export default defineConfig({
     watch: { ignored: ['**/src-tauri/**'] },
   },
   envPrefix: ['VITE_', 'TAURI_ENV_*'],
+  // The image codecs are WebAssembly loaded relative to their own modules;
+  // pre-bundling would break those paths.
+  optimizeDeps: {
+    exclude: ['@jsquash/webp', '@jsquash/avif', '@jsquash/jpeg', '@jsquash/png', '@jsquash/oxipng', '@jsquash/resize'],
+  },
+  worker: { format: 'es' },
   build: {
     target: 'es2022',
     sourcemap: false,

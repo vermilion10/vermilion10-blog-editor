@@ -10,9 +10,10 @@ import { loadBody, serializeBody, type LoadedBody } from '../../lib/visual/markd
 import { nodeViews } from '../../lib/visual/nodeviews';
 import {
   blockAt, blockOfSelection, buildPlugins, deleteBlock, duplicateBlock, editLink, insertSnippet as insertIntoView,
-  moveBlock, startBlockDrag, turnBlockInto, type BlockRef,
+  insertMarkdownBlocksAt, moveBlock, startBlockDrag, turnBlockInto, type BlockRef,
 } from '../../lib/visual/editing';
 import type { Snippet } from '../../lib/cheatsheet';
+import { addImages, imageFilesIn } from '../../lib/images';
 import type { IconName } from '../../lib/icons';
 import VisualToolbar from './VisualToolbar.vue';
 import MdIcon from '../md/MdIcon.vue';
@@ -54,6 +55,16 @@ function build(content: string) {
       state,
       nodeViews,
       attributes: { class: 'vb-prose', spellcheck: 'true', 'aria-label': 'Post body' },
+      // Dropped or pasted image files go through the upload dialog, then land
+      // where they were dropped. Moves within the editor are left to ProseMirror.
+      handleDrop(v, event, _slice, moved) {
+        if (moved) return false;
+        const at = v.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? null;
+        return takeImages(v, event.dataTransfer, at, event);
+      },
+      handlePaste(v, event) {
+        return takeImages(v, event.clipboardData, null, event);
+      },
       dispatchTransaction(tr) {
         const next = view!.state.apply(tr);
         view!.updateState(next);
@@ -65,6 +76,15 @@ function build(content: string) {
   }
   editorState.value = view.state;
   lastEmitted = content;
+}
+
+function takeImages(v: EditorView, data: DataTransfer | null, at: number | null, event: Event): boolean {
+  const files = imageFilesIn(data);
+  if (!files.length) return false;
+  event.preventDefault();
+  let pos = at ?? v.state.selection.from;
+  addImages(files, { kind: 'insert', insert: (md) => { pos = insertMarkdownBlocksAt(v, pos, md); } });
+  return true;
 }
 
 function emitNow() {

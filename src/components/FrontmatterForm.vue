@@ -8,6 +8,9 @@ import MdChip from './md/MdChip.vue';
 import MdButton from './md/MdButton.vue';
 import MdIcon from './md/MdIcon.vue';
 import MdIconButton from './md/MdIconButton.vue';
+import PostImages from './PostImages.vue';
+import { addImages } from '../lib/images';
+import { r2Available } from '../lib/r2';
 
 const str = (key: string) => {
   const v = docMeta.value[key];
@@ -49,6 +52,13 @@ function onTagKey(event: KeyboardEvent) {
   } else if (event.key === 'Backspace' && !tagInput.value && tags.value.length) {
     removeTag(tags.value[tags.value.length - 1]);
   }
+}
+
+const coverPicker = ref<HTMLInputElement>();
+function onCoverPick(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.files?.[0]) addImages([input.files[0]], { kind: 'cover' });
+  input.value = '';
 }
 
 const showPassword = ref(false);
@@ -113,7 +123,12 @@ const showAdvanced = ref(false);
       supporting="R2 key like posts/2026/slug/cover.webp, or a full URL"
       :model-value="str('image')"
       @update:model-value="set('image', $event)"
-    />
+    >
+      <template v-if="r2Available" #trailing>
+        <MdIconButton icon="cloud_upload" label="Upload a cover image" @click="coverPicker?.click()" />
+      </template>
+    </MdTextField>
+    <input ref="coverPicker" type="file" accept="image/*" class="hidden" @change="onCoverPick" />
 
     <div class="-mx-4">
       <MdSwitch label="Draft" supporting="Left out of the site entirely" :model-value="bool('draft')" @update:model-value="setFlag('draft', $event)" />
@@ -161,5 +176,7 @@ const showAdvanced = ref(false);
         </div>
       </div>
     </div>
+
+    <PostImages class="border-t border-outline-variant pt-5" />
   </form>
 </template>

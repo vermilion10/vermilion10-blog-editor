@@ -75,20 +75,48 @@ fn check_key(key: &str) -> Result<(), String> {
   Ok(())
 }
 
+/// Secrets only Rust code may touch. The R2 credentials are used here to sign
+/// requests and never need to reach the web view.
+const RUST_ONLY: &[&str] = &["r2-config"];
+
+fn check_js_key(key: &str) -> Result<(), String> {
+  check_key(key)?;
+  if RUST_ONLY.contains(&key) {
+    return Err(format!("secret {key:?} is not readable from the web view"));
+  }
+  Ok(())
+}
+
 #[tauri::command]
 pub fn secret_get(app: tauri::AppHandle, key: String) -> Result<Option<String>, String> {
-  check_key(&key)?;
+  check_js_key(&key)?;
   store::get(&app, &key)
 }
 
 #[tauri::command]
 pub fn secret_set(app: tauri::AppHandle, key: String, value: String) -> Result<(), String> {
-  check_key(&key)?;
+  check_js_key(&key)?;
   store::set(&app, &key, &value)
 }
 
 #[tauri::command]
 pub fn secret_delete(app: tauri::AppHandle, key: String) -> Result<(), String> {
-  check_key(&key)?;
+  check_js_key(&key)?;
   store::delete(&app, &key)
+}
+
+// For other Rust modules.
+pub(crate) fn load(app: &tauri::AppHandle, key: &str) -> Result<Option<String>, String> {
+  check_key(key)?;
+  store::get(app, key)
+}
+
+pub(crate) fn save(app: &tauri::AppHandle, key: &str, value: &str) -> Result<(), String> {
+  check_key(key)?;
+  store::set(app, key, value)
+}
+
+pub(crate) fn remove(app: &tauri::AppHandle, key: &str) -> Result<(), String> {
+  check_key(key)?;
+  store::delete(app, key)
 }

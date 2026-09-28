@@ -1,3 +1,4 @@
+mod r2;
 mod secret;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -8,6 +9,12 @@ pub fn run() {
       secret::secret_get,
       secret::secret_set,
       secret::secret_delete,
+      r2::r2_status,
+      r2::r2_save,
+      r2::r2_clear,
+      r2::r2_head,
+      r2::r2_list,
+      r2::r2_put,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
