@@ -158,11 +158,12 @@ html, body {
 }
 
 /* With the keyboard up, its edge is the bottom: no gesture-bar inset, and the
-   phone navigation bar makes way for the text being typed. */
+   phone navigation bar and the editor toolbar make way for the text being
+   typed. */
 .keyboard-open .safe-area {
   padding-bottom: 0;
 }
-.keyboard-open nav.keyboard-hides {
+.keyboard-open .keyboard-hides {
   display: none;
 }
 
@@ -206,6 +207,22 @@ button:disabled {
 
 ::selection {
   background: color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
+}
+
+/* Placeholder for text that is still loading. */
+.skeleton {
+  display: block;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: linear-gradient(90deg,
+    var(--md-sys-color-surface-container-high) 0%,
+    var(--md-sys-color-surface-container-highest) 50%,
+    var(--md-sys-color-surface-container-high) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }
 
 .scroll-thin {

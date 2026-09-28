@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
 
       <main class="my-2 mr-2 flex min-w-0 flex-1 flex-col gap-2">
         <template v-if="state.doc">
-          <div class="rounded-xl bg-surface">
+          <div class="keyboard-hides rounded-xl bg-surface">
             <TopBar :title="docTitle" :subtitle="docStatus">
               <MdSegmented v-model="viewModel" label="Editor view" :options="viewOptions" class="mr-2" />
               <MdIconButton icon="add_photo_alternate" label="Add image" @click="imagePicker?.click()" />

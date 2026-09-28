@@ -228,15 +228,22 @@ function onKeydown(event: KeyboardEvent) {
 
 // --- Lifecycle ----------------------------------------------------------------
 
+// The on-screen keyboard shrinks the editor; keep the cursor in sight.
+function keepCursorVisible() {
+  if (view?.hasFocus()) view.dispatch(view.state.tr.scrollIntoView());
+}
+
 onMounted(() => {
   build(props.modelValue);
   document.addEventListener('pointerdown', onDocPointerDown, true);
+  window.visualViewport?.addEventListener('resize', keepCursorVisible);
   placeHandleAtSelection();
 });
 
 onBeforeUnmount(() => {
   if (emitTimer) emitNow();
   document.removeEventListener('pointerdown', onDocPointerDown, true);
+  window.visualViewport?.removeEventListener('resize', keepCursorVisible);
   view?.destroy();
   view = null;
 });

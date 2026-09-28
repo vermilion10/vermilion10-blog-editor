@@ -174,12 +174,21 @@ function applyBase() {
   view?.dispatch({ effects: setChangeBase.of(props.base ?? null) });
 }
 
+// The on-screen keyboard shrinks the editor; keep the cursor in sight.
+function keepCursorVisible() {
+  if (view?.hasFocus) view.dispatch({ effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: 'nearest', yMargin: 24 }) });
+}
+
 onMounted(() => {
   view = new EditorView({ state: freshState(props.modelValue), parent: host.value! });
   applyBase();
+  window.visualViewport?.addEventListener('resize', keepCursorVisible);
 });
 
-onBeforeUnmount(() => view?.destroy());
+onBeforeUnmount(() => {
+  window.visualViewport?.removeEventListener('resize', keepCursorVisible);
+  view?.destroy();
+});
 
 watch(() => props.docKey, () => {
   view?.setState(freshState(props.modelValue));

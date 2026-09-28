@@ -48,9 +48,13 @@ const posts = computed(() => {
       </div>
     </div>
 
-    <p v-if="state.loadingPosts && !state.posts.length" class="type-body-medium px-8 py-6 text-on-surface-variant">Loading posts from GitHub…</p>
-
-    <ul class="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-24" role="list">
+    <ul class="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-24" role="list" :aria-busy="state.loadingPosts">
+      <template v-if="state.loadingPosts && !state.posts.length">
+        <li v-for="n in 8" :key="n" class="px-4 py-3" aria-hidden="true">
+          <span class="skeleton h-5" :style="{ width: `${55 + ((n * 37) % 35)}%` }"></span>
+          <span class="skeleton mt-2 h-4 w-28"></span>
+        </li>
+      </template>
       <li v-for="post in posts" :key="post.path">
         <button
           type="button"
@@ -62,7 +66,8 @@ const posts = computed(() => {
           <span class="min-w-0 flex-1">
             <span class="type-body-large line-clamp-2">{{ post.meta?.title ?? fileName(post.path) }}</span>
             <span class="type-body-medium mt-0.5 flex flex-wrap items-center gap-x-2 text-on-surface-variant">
-              <span>{{ post.meta?.published || fileName(post.path) }}</span>
+              <span v-if="post.meta?.published">{{ post.meta.published }}</span>
+              <span v-else-if="!post.meta && state.loadingPosts" class="skeleton my-0.5 h-4 w-28" aria-hidden="true"></span>
               <span v-if="post.meta?.lang" class="uppercase">{{ post.meta.lang }}</span>
               <span v-if="post.meta?.draft">Draft</span>
               <span v-if="post.meta?.encrypted" class="inline-flex items-center gap-1"><MdIcon name="lock" :size="14" />Locked</span>
